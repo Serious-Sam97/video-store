@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VideoVault — Retro Video Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <canvas id="game-canvas"></canvas>
+  <div id="scanlines"></div>
+
+  <!-- Settings Screen -->
+  <div id="settings-screen" class="overlay">
+    <div class="overlay-box">
+      <h1 class="neon-title">VIDEO<span>VAULT</span></h1>
+      <p class="subtitle">// Enter your Jellyfin credentials //</p>
+      <form id="settings-form">
+        <div class="field">
+          <label>SERVER URL</label>
+          <input type="text" id="server-url" placeholder="http://localhost:8096">
+        </div>
+        <div class="field">
+          <label>USERNAME</label>
+          <input type="text" id="username" placeholder="Your Jellyfin username" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>PASSWORD</label>
+          <input type="password" id="password" placeholder="Your Jellyfin password" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-neon">ENTER THE STORE</button>
+      </form>
+      <p class="hint">No Jellyfin? <a id="demo-link" href="#">Try demo mode</a></p>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="overlay hidden">
+    <div class="overlay-box">
+      <h2 class="neon-title">LOADING<span>...</span></h2>
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+      <p id="loading-text">Connecting...</p>
+    </div>
+  </div>
+
+  <!-- Instructions Screen -->
+  <div id="instructions-screen" class="overlay hidden">
+    <div class="overlay-box">
+      <h2 class="neon-title">WELCOME TO <span>VIDEOVAULT</span></h2>
+      <div class="keys-list">
+        <div class="key-row"><kbd>W A S D</kbd><span>Move</span></div>
+        <div class="key-row"><kbd>MOUSE</kbd><span>Look around</span></div>
+        <div class="key-row"><kbd>E</kbd><span>Pick up movie</span></div>
+        <div class="key-row"><kbd>ESC</kbd><span>Pause</span></div>
+      </div>
+      <button id="enter-store-btn" class="btn-neon">ENTER STORE</button>
+    </div>
+  </div>
+
+  <!-- Pause Menu -->
+  <div id="pause-menu" class="overlay hidden">
+    <div class="overlay-box">
+      <h2 class="neon-title">PAUSED</h2>
+      <button id="resume-btn" class="btn-neon">RESUME</button>
+      <button id="quit-btn" class="btn-neon secondary">QUIT</button>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="crosshair" class="hidden">+</div>
+  <div id="click-to-play" class="hidden">CLICK TO PLAY</div>
+  <div id="hover-label" class="hidden">
+    <span id="hover-title"></span>
+    <span class="hint-key">[E] Pick up</span>
+  </div>
+
+  <!-- Movie Panel -->
+  <div id="movie-panel" class="hidden">
+    <div id="movie-panel-inner">
+      <div id="poster-wrap">
+        <img id="poster-img" src="" alt="">
+        <div id="poster-placeholder">🎬</div>
+      </div>
+      <div id="movie-info">
+        <h2 id="info-title"></h2>
+        <div id="info-meta">
+          <span id="info-year"></span>
+          <span id="info-rating"></span>
+          <span id="info-runtime"></span>
+        </div>
+        <p id="info-overview"></p>
+        <div id="info-actions">
+          <button id="play-btn" class="btn-neon">▶ PLAY</button>
+          <button id="back-btn" class="btn-neon secondary">✕ BACK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
