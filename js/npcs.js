@@ -14,6 +14,61 @@ const HEAD_CY = SHLDR_Y + NECK_H + HEAD_R;      // 1.61
 
 const NPC_RADIUS = 0.28;
 
+// ── NPC names (tied to style index) ─────────────────────────────
+const NPC_NAMES = ['Marcus', 'Dex', 'Layla', 'Ozzy', 'Nadia', 'Ray'];
+
+// ── Per-character dialogue pools ─────────────────────────────────
+const NPC_PHRASES = [
+  // Marcus — casual, indecisive
+  [
+    "Man, I've been here two hours and still can't pick one.",
+    "I always end up rewatching the same three movies. No shame.",
+    "My whole weekend is basically planned around this place.",
+    "Do you think they'd notice if I just lived here?",
+    "I judge a film by its cover. It usually works out.",
+  ],
+  // Dex — action obsessed
+  [
+    "If it doesn't have a car chase in the first ten minutes, I'm out.",
+    "Nothing beats an 80s action flick on a Friday night.",
+    "CGI explosions never hit the same as practical effects. Trust me.",
+    "I rank every movie by its villain. That's the real metric.",
+    "The louder the soundtrack, the better the movie. Proven fact.",
+  ],
+  // Layla — artsy, indie
+  [
+    "I'm looking for anything with interesting cinematography.",
+    "People sleep on foreign films. They're missing out.",
+    "The mood lighting in this store really sets the vibe, doesn't it?",
+    "I always read the back cover twice before committing.",
+    "If the color grading is flat, I'm already disappointed.",
+  ],
+  // Ozzy — critic, glasses
+  [
+    "The director's cut is always the definitive version. Always.",
+    "Most sequels dilute the original. There, I said it.",
+    "I rate movies in a private spreadsheet. Yes, really.",
+    "Honestly, the trailer gave too much away on that one.",
+    "Narrative subtext is what separates cinema from content.",
+  ],
+  // Nadia — horror fan
+  [
+    "The scarier, the better. That's just science.",
+    "I sleep like a baby after a good horror marathon.",
+    "Jump scares are cheap. Atmosphere is everything.",
+    "People act weird when I say I watch horror to relax.",
+    "If there's no tension in the first act, the third won't save it.",
+  ],
+  // Ray — classic movies, nostalgic
+  [
+    "They don't make them like they used to, my friend.",
+    "Everything modern is just a remake of something from the '60s.",
+    "A good film should make you feel something real.",
+    "I've been coming here since this place opened. Good memories.",
+    "You can't rush a great story. That's what people forget.",
+  ],
+];
+
 // ── Appearance styles ───────────────────────────────────────────
 const STYLES = [
   { skin: 0xf5c5a0, shirt: 0x2471a3, pants: 0x1a3050, hair: 0x2a1408, hairStyle: 'short'  },
@@ -62,8 +117,10 @@ const WPS = [
 // ── NPC ─────────────────────────────────────────────────────────
 class NPC {
   constructor(scene, styleIdx, startWPIdx) {
-    const style = STYLES[styleIdx % STYLES.length];
-    this.group  = new THREE.Group();
+    const style  = STYLES[styleIdx % STYLES.length];
+    this.name    = NPC_NAMES[styleIdx % NPC_NAMES.length];
+    this.phrases = NPC_PHRASES[styleIdx % NPC_PHRASES.length];
+    this.group   = new THREE.Group();
     this._build(style);
 
     // Realistic height variation: 0.93–1.08×

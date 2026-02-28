@@ -60,7 +60,7 @@
       <div class="keys-list">
         <div class="key-row"><kbd>W A S D</kbd><span>Move</span></div>
         <div class="key-row"><kbd>MOUSE</kbd><span>Look around</span></div>
-        <div class="key-row"><kbd>E</kbd><span>Pick up movie</span></div>
+        <div class="key-row"><kbd>E</kbd><span>Pick up / Use computer / Talk</span></div>
         <div class="key-row"><kbd>ESC</kbd><span>Pause</span></div>
       </div>
       <button id="enter-store-btn" class="btn-neon">ENTER STORE</button>
@@ -82,6 +82,41 @@
   <div id="hover-label" class="hidden">
     <span id="hover-title"></span>
     <span class="hint-key">[E] Pick up</span>
+  </div>
+
+  <!-- NPC Dialog -->
+  <div id="npc-dialog" class="hidden">
+    <div id="npc-dialog-box">
+      <div id="npc-dialog-header">
+        <span class="npc-avatar">👤</span>
+        <span id="npc-dialog-name">Marcus</span>
+        <span id="npc-dialog-close">✕</span>
+      </div>
+      <p id="npc-dialog-text">"..."</p>
+      <div id="npc-dialog-rec">
+        <div class="rec-label">▶ RECOMMENDS</div>
+        <div id="npc-rec-title">Movie Title</div>
+      </div>
+      <div class="npc-dialog-hint">[E] or [ESC] to dismiss</div>
+    </div>
+  </div>
+
+  <!-- Computer Terminal Panel -->
+  <div id="computer-panel" class="hidden">
+    <div id="computer-terminal">
+      <div id="terminal-header">
+        <span class="terminal-title">SAMFLIX CATALOG&nbsp;&nbsp;v1.0</span>
+        <span class="terminal-close" id="computer-close-btn">[ESC] EXIT</span>
+      </div>
+      <div id="terminal-search-row">
+        <span class="terminal-prompt">&gt; SEARCH:&nbsp;</span>
+        <input type="text" id="terminal-search" autocomplete="off" spellcheck="false" maxlength="60" placeholder="type movie name...">
+      </div>
+      <div class="terminal-sep"></div>
+      <div id="terminal-results">
+        <div class="terminal-hint">Type a movie name to search the catalog...</div>
+      </div>
+    </div>
   </div>
 
   <!-- Movie Panel -->

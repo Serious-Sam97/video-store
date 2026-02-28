@@ -46,8 +46,9 @@ export class UI {
     this.hud.hoverLabel.classList.add('hidden');
   }
 
-  showHover(title) {
+  showHover(title, hint = '[E] Pick up') {
     this.hud.hoverTitle.textContent = title;
+    this.hud.hoverLabel.querySelector('.hint-key').textContent = hint;
     this.hud.hoverLabel.classList.remove('hidden');
   }
   hideHover() {

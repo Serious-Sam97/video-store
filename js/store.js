@@ -50,6 +50,7 @@ export class VideoStore {
     this._buildCounter();
     this._buildDecor();
     this._buildBanners();
+    this._buildEntranceComputer();
   }
 
   // ─── ROOM ───────────────────────────────────────────────────
@@ -997,6 +998,253 @@ export class VideoStore {
     ctx.beginPath(); ctx.ellipse(cx, cy, rw / 2, rh / 2, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx - rw * 0.3, cy + rh * 0.2, rw * 0.55, rh * 0.55, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx + rw * 0.35, cy + rh * 0.1, rw * 0.6, rh * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ─── MOVIE BANNERS ──────────────────────────────────────────
+  // ─── ENTRANCE COMPUTER ──────────────────────────────────────
+  _buildEntranceComputer() {
+    const s   = this.scene;
+    const CX  = -9;
+    const CZ  = 19.8; // left of counter (counter is x=-4.7 to 4.7, z=18.7-20.3)
+
+    const deskMat  = new THREE.MeshLambertMaterial({ color: 0x1a1a18 });
+    const deskTopM = new THREE.MeshLambertMaterial({ color: 0x222220 });
+    const monMat   = new THREE.MeshLambertMaterial({ color: 0x2a2a28 });
+    const blackMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+
+    // Desk body
+    const deskBody = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.72, 0.62), deskMat);
+    deskBody.position.set(CX, 0.36, CZ);
+    s.add(deskBody);
+
+    // Desk surface
+    const deskSurf = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.05, 0.65), deskTopM);
+    deskSurf.position.set(CX, 0.745, CZ);
+    s.add(deskSurf);
+
+    // Small "MOVIE CATALOG" label on front edge of desk
+    const labelCanvas = document.createElement('canvas');
+    labelCanvas.width = 256; labelCanvas.height = 48;
+    const lctx = labelCanvas.getContext('2d');
+    lctx.fillStyle = '#0a0a0a';
+    lctx.fillRect(0, 0, 256, 48);
+    lctx.fillStyle = '#00ff44';
+    lctx.font = 'bold 20px monospace';
+    lctx.textAlign = 'center';
+    lctx.textBaseline = 'middle';
+    lctx.fillText('MOVIE CATALOG', 128, 24);
+    const labelTex = new THREE.CanvasTexture(labelCanvas);
+    const label = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.55, 0.07),
+      new THREE.MeshBasicMaterial({ map: labelTex })
+    );
+    label.position.set(CX, 0.72, CZ + 0.33);
+    s.add(label);
+
+    // Monitor stand base
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.06, 0.20), blackMat);
+    base.position.set(CX, 0.805, CZ - 0.08);
+    s.add(base);
+
+    // Monitor neck
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.24, 8), blackMat);
+    neck.position.set(CX, 0.955, CZ - 0.08);
+    s.add(neck);
+
+    // Monitor body — chunky CRT housing
+    const monBody = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.54, 0.48), monMat);
+    monBody.position.set(CX, 1.29, CZ - 0.06);
+    s.add(monBody);
+
+    // Bezel (front face, slightly inset)
+    const bezel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.62, 0.50, 0.04),
+      new THREE.MeshLambertMaterial({ color: 0x333330 })
+    );
+    bezel.position.set(CX, 1.29, CZ - 0.06 + 0.24);
+    s.add(bezel);
+
+    // Screen plane — faces +Z (toward entrance / player)
+    const SW = 0.52, SH = 0.40;
+    const SZ = CZ - 0.06 + 0.27; // just in front of bezel
+
+    // Build the canvas we'll keep updating
+    const sc = document.createElement('canvas');
+    sc.width = 512; sc.height = 384;
+    this._computerCanvas  = sc;
+    this._computerCtx     = sc.getContext('2d');
+    this._computerTex     = new THREE.CanvasTexture(sc);
+
+    const screenMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(SW, SH),
+      new THREE.MeshBasicMaterial({ map: this._computerTex })
+    );
+    screenMesh.position.set(CX, 1.29, SZ);
+    s.add(screenMesh);
+    screenMesh.userData.isComputer = true;
+    this.computerScreenMesh = screenMesh;
+
+    // Power LED
+    const ledMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const led = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 6), ledMat);
+    led.position.set(CX + 0.26, 1.10, CZ - 0.06 + 0.27);
+    s.add(led);
+
+    // Screen glow
+    const glow = new THREE.PointLight(0x00ff44, 0.5, 1.4);
+    glow.position.set(CX, 1.29, SZ + 0.15);
+    s.add(glow);
+
+    // Keyboard
+    const kb = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.032, 0.19), blackMat);
+    kb.position.set(CX, 0.773, CZ + 0.19);
+    s.add(kb);
+
+    // Keyboard key rows (purely decorative)
+    const keyRowMat = new THREE.MeshLambertMaterial({ color: 0x1e1e1c });
+    for (let row = 0; row < 3; row++) {
+      const kr = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.015, 0.04), keyRowMat);
+      kr.position.set(CX, 0.79, CZ + 0.12 + row * 0.055);
+      s.add(kr);
+    }
+
+    // CPU tower under/beside desk
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.44, 0.30), monMat);
+    tower.position.set(CX + 0.44, 0.22, CZ);
+    s.add(tower);
+    const drive = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.028, 0.18), blackMat);
+    drive.position.set(CX + 0.44, 0.36, CZ);
+    s.add(drive);
+
+    // Interaction positions
+    this.computerFacePos = new THREE.Vector3(CX, 1.29, SZ);
+    this.computerViewPos = new THREE.Vector3(CX, 1.4,  CZ + 1.05);
+
+    // Collider for desk
+    this.colliders.push({
+      min: new THREE.Vector3(CX - 0.60, 0, CZ - 0.40),
+      max: new THREE.Vector3(CX + 0.65, 0.8, CZ + 0.40),
+    });
+
+    // Draw idle screen
+    this.drawComputerIdle();
+  }
+
+  // ── Screen texture helpers ────────────────────────────────────
+  _crtBase() {
+    const c = this._computerCanvas;
+    const ctx = this._computerCtx;
+    const W = c.width, H = c.height;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle phosphor bloom
+    const bloom = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * 0.65);
+    bloom.addColorStop(0, 'rgba(0,30,8,0.35)');
+    bloom.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, 0, W, H);
+
+    // CRT scanlines
+    for (let y = 0; y < H; y += 4) {
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.fillRect(0, y, W, 1);
+    }
+
+    // Header bar
+    ctx.fillStyle = '#001a00';
+    ctx.fillRect(0, 0, W, 58);
+    ctx.fillStyle = '#00ff44';
+    ctx.font = 'bold 30px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('SAMFLIX CATALOG  v1.0', W / 2, 40);
+
+    ctx.strokeStyle = '#006622';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(16, 62); ctx.lineTo(W - 16, 62);
+    ctx.stroke();
+
+    return { ctx, W, H };
+  }
+
+  drawComputerIdle() {
+    const { ctx, W, H } = this._crtBase();
+
+    ctx.font = '22px monospace';
+    ctx.textAlign = 'left';
+    const lines = [
+      { t: '>_ MOVIE SEARCH TERMINAL',  c: '#00ff44' },
+      { t: '',                           c: '#00cc33' },
+      { t: '   Find any tape in our',   c: '#00aa33' },
+      { t: '   collection instantly.',  c: '#00aa33' },
+      { t: '',                           c: '#00cc33' },
+      { t: '   Approach & press [E]',   c: '#00cc33' },
+      { t: '   to begin searching.',    c: '#00cc33' },
+      { t: '',                           c: '#006622' },
+      { t: '>_ _',                       c: '#00ff44' },
+    ];
+    let y = 94;
+    for (const { t, c } of lines) {
+      ctx.fillStyle = c;
+      ctx.fillText(t, 24, y);
+      y += 30;
+    }
+
+    this._computerTex.needsUpdate = true;
+  }
+
+  updateComputerScreen(query, results) {
+    if (!query) { this.drawComputerIdle(); return; }
+
+    const { ctx, W, H } = this._crtBase();
+
+    ctx.font = '20px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#00aa33';
+    const q = query.length > 26 ? query.slice(0, 25) + '…' : query;
+    ctx.fillText(`> SEARCH: "${q}"`, 16, 86);
+
+    ctx.strokeStyle = '#003311';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(16, 98); ctx.lineTo(W - 16, 98);
+    ctx.stroke();
+
+    if (!results || results.length === 0) {
+      ctx.fillStyle = '#ff4444';
+      ctx.font = '22px monospace';
+      ctx.fillText('  NO RESULTS FOUND', 16, 128);
+    } else {
+      let y = 116;
+      for (let i = 0; i < Math.min(results.length, 5); i++) {
+        const r = results[i];
+        ctx.fillStyle = '#00ff44';
+        ctx.font = 'bold 19px monospace';
+        const title = r.movie.Name.length > 24 ? r.movie.Name.slice(0, 23) + '…' : r.movie.Name;
+        ctx.fillText(`${i + 1}. ${title}`, 16, y);
+
+        ctx.fillStyle = '#00aa33';
+        ctx.font = '16px monospace';
+        const genre = r.genre.length > 18 ? r.genre.slice(0, 17) + '…' : r.genre;
+        ctx.fillText(`   ${genre}`, 16, y + 20);
+        ctx.fillText(`   ${r.location}`, 16, y + 38);
+
+        if (i < results.length - 1) {
+          ctx.strokeStyle = '#002200';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(24, y + 50); ctx.lineTo(W - 24, y + 50);
+          ctx.stroke();
+        }
+        y += 58;
+        if (y > H - 16) break;
+      }
+    }
+
+    this._computerTex.needsUpdate = true;
   }
 
   // ─── MOVIE BANNERS ──────────────────────────────────────────
