@@ -60,6 +60,23 @@ export class JellyfinClient {
     return { 'Authorization': this._authHeader() };
   }
 
+  async getTVShows(limit = 500) {
+    const params = new URLSearchParams({
+      IncludeItemTypes: 'Series',
+      Recursive: 'true',
+      Fields: 'Overview,OfficialRating,ProductionYear,CommunityRating,Genres,ChildCount',
+      SortBy: 'SortName',
+      SortOrder: 'Ascending',
+      Limit: limit,
+    });
+    const res = await fetch(`${this.serverUrl}/Users/${this.userId}/Items?${params}`, {
+      headers: this._headers(),
+    });
+    if (!res.ok) throw new Error(`Jellyfin ${res.status}: ${res.statusText}`);
+    const data = await res.json();
+    return (data.Items || []).map(s => ({ ...s, isTVShow: true }));
+  }
+
   async getMovies(limit = 500) {
     const params = new URLSearchParams({
       IncludeItemTypes: 'Movie',
@@ -86,6 +103,28 @@ export class JellyfinClient {
     return `${this.serverUrl}/web/index.html#!/details?id=${itemId}`;
   }
 }
+
+// ─── Demo TV shows ─────────────────────────────────────────────
+export const DEMO_TV_SHOWS = [
+  { Id:'tv01', Name:'The X-Files',              isTVShow:true, Genres:['Drama','Science Fiction'], ProductionYear:1993, CommunityRating:8.6, ChildCount:11, NumberOfEpisodes:217, Overview:'Two FBI agents investigate paranormal cases that may be linked to a vast government conspiracy.' },
+  { Id:'tv02', Name:'Twin Peaks',               isTVShow:true, Genres:['Drama','Mystery'],         ProductionYear:1990, CommunityRating:8.8, ChildCount:3,  NumberOfEpisodes:48,  Overview:'An FBI agent investigates the murder of a homecoming queen in a small, secretive logging town.' },
+  { Id:'tv03', Name:'The Sopranos',             isTVShow:true, Genres:['Drama','Crime'],           ProductionYear:1999, CommunityRating:9.2, ChildCount:6,  NumberOfEpisodes:86,  Overview:'A New Jersey mob boss balances family life with running his criminal organization.' },
+  { Id:'tv04', Name:'Seinfeld',                 isTVShow:true, Genres:['Comedy'],                  ProductionYear:1989, CommunityRating:8.9, ChildCount:9,  NumberOfEpisodes:180, Overview:'A stand-up comedian and his three quirky friends navigate the absurdities of New York City life.' },
+  { Id:'tv05', Name:'Friends',                  isTVShow:true, Genres:['Comedy','Romance'],        ProductionYear:1994, CommunityRating:8.9, ChildCount:10, NumberOfEpisodes:236, Overview:'Six friends navigate life, love, and careers in Manhattan.' },
+  { Id:'tv06', Name:'Buffy the Vampire Slayer', isTVShow:true, Genres:['Fantasy','Action'],        ProductionYear:1997, CommunityRating:8.3, ChildCount:7,  NumberOfEpisodes:144, Overview:'A teenage girl chosen to fight vampires and other supernatural threats.' },
+  { Id:'tv07', Name:'The Wire',                 isTVShow:true, Genres:['Drama','Crime'],           ProductionYear:2002, CommunityRating:9.3, ChildCount:5,  NumberOfEpisodes:60,  Overview:'The Baltimore drug scene is portrayed through the eyes of law enforcement and drug dealers alike.' },
+  { Id:'tv08', Name:'ER',                       isTVShow:true, Genres:['Drama'],                   ProductionYear:1994, CommunityRating:8.0, ChildCount:15, NumberOfEpisodes:331, Overview:'The inner workings of a Chicago hospital emergency room are dramatized.' },
+  { Id:'tv09', Name:'Oz',                       isTVShow:true, Genres:['Drama','Crime'],           ProductionYear:1997, CommunityRating:8.7, ChildCount:6,  NumberOfEpisodes:56,  Overview:'Life inside the experimental Emerald City unit of Oswald State Penitentiary.' },
+  { Id:'tv10', Name:'The Twilight Zone',        isTVShow:true, Genres:['Science Fiction','Horror'],ProductionYear:1959, CommunityRating:9.0, ChildCount:5,  NumberOfEpisodes:156, Overview:'Anthology of self-contained tales involving ordinary people in extraordinary situations.' },
+  { Id:'tv11', Name:'Star Trek: The Next Generation', isTVShow:true, Genres:['Science Fiction'],  ProductionYear:1987, CommunityRating:8.7, ChildCount:7,  NumberOfEpisodes:178, Overview:'The crew of the Enterprise-D explores the galaxy in the 24th century.' },
+  { Id:'tv12', Name:'Quantum Leap',             isTVShow:true, Genres:['Science Fiction','Drama'], ProductionYear:1989, CommunityRating:7.9, ChildCount:5,  NumberOfEpisodes:97,  Overview:'A physicist leaps through time inhabiting other people\'s bodies to put right what once went wrong.' },
+  { Id:'tv13', Name:'Cheers',                   isTVShow:true, Genres:['Comedy'],                  ProductionYear:1982, CommunityRating:8.2, ChildCount:11, NumberOfEpisodes:275, Overview:'The regulars at a Boston bar become a surrogate family for each other.' },
+  { Id:'tv14', Name:'Northern Exposure',        isTVShow:true, Genres:['Comedy','Drama'],          ProductionYear:1990, CommunityRating:8.1, ChildCount:6,  NumberOfEpisodes:110, Overview:'A New York doctor is forced to practice medicine in a small Alaska town.' },
+  { Id:'tv15', Name:'Homicide: Life on the Street', isTVShow:true, Genres:['Drama','Crime'],      ProductionYear:1993, CommunityRating:8.6, ChildCount:7,  NumberOfEpisodes:122, Overview:'The cases and personal lives of Baltimore homicide detectives.' },
+  { Id:'tv16', Name:'Babylon 5',                isTVShow:true, Genres:['Science Fiction','Drama'], ProductionYear:1993, CommunityRating:8.3, ChildCount:5,  NumberOfEpisodes:110, Overview:'A space station serves as neutral ground for a multitude of alien races.' },
+  { Id:'tv17', Name:'NYPD Blue',                isTVShow:true, Genres:['Drama','Crime'],           ProductionYear:1993, CommunityRating:7.9, ChildCount:12, NumberOfEpisodes:261, Overview:'New York City detectives tackle serious crimes and personal demons.' },
+  { Id:'tv18', Name:'The Simpsons',             isTVShow:true, Genres:['Comedy','Animation'],      ProductionYear:1989, CommunityRating:8.7, ChildCount:35, NumberOfEpisodes:768, Overview:'The daily life of the Simpson family in the fictional town of Springfield.' },
+];
 
 // ─── Demo movies (80s/90s classics) ───────────────────────────
 export const DEMO_MOVIES = [

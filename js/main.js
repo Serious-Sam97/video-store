@@ -1,10 +1,12 @@
 import * as THREE from 'three';
-import { JellyfinClient, DEMO_MOVIES } from './jellyfin.js';
+import { JellyfinClient, DEMO_MOVIES, DEMO_TV_SHOWS } from './jellyfin.js';
 import { VideoStore } from './store.js';
 import { FirstPersonControls } from './controls.js';
 import { MovieManager } from './movies.js';
 import { NPCManager } from './npcs.js';
 import { UI } from './ui.js';
+
+const TV_ZONE_LOCATION = 'TV SHOWS — BACK ROOM';
 
 const ZONE_LOCATIONS = [
   'LEFT WALL — FRONT',
@@ -160,8 +162,10 @@ class VideoVault {
       this.jellyfinClient = await JellyfinClient.login(serverUrl, username, password);
       this.ui.setProgress(20, 'Fetching movie library...');
       const movies = await this.jellyfinClient.getMovies(500);
-      this.ui.setProgress(40, `Found ${movies.length} movies — building store...`);
-      await this._buildStore(movies);
+      this.ui.setProgress(35, `Found ${movies.length} movies — fetching TV shows...`);
+      const tvShows = await this.jellyfinClient.getTVShows(500);
+      this.ui.setProgress(40, `Found ${tvShows.length} TV shows — building store...`);
+      await this._buildStore(movies, tvShows);
       this.ui.setProgress(100, 'Done!');
       await this._sleep(400);
       this.ui.showInstructions();
@@ -178,15 +182,16 @@ class VideoVault {
     this.ui.showLoading();
     this.ui.setProgress(10, 'Loading demo store...');
     this.jellyfinClient = null;
-    await this._buildStore(DEMO_MOVIES);
+    await this._buildStore(DEMO_MOVIES, DEMO_TV_SHOWS);
     this.ui.setProgress(100, 'Ready!');
     await this._sleep(300);
     this.ui.showInstructions();
     this.state = 'instructions';
   }
 
-  async _buildStore(movies) {
+  async _buildStore(movies, tvShows = []) {
     this.store = new VideoStore(this.scene);
+    this.store.buildTVSection();
     this.ui.setProgress(50, 'Organising by genre...');
 
     // Group movies by primary genre, sort genres by count descending
@@ -228,6 +233,12 @@ class VideoVault {
       (pct) => this.ui.setProgress(pct, 'Loading movie covers...')
     );
     await this.movieManager.placeByZone(zones, zoneAssignments);
+
+    // Place TV shows in the dedicated TV section
+    if (tvShows.length > 0 && this.store.tvShelfZone) {
+      this.ui.setProgress(95, 'Stocking TV show shelves...');
+      await this.movieManager.placeTVShows(tvShows, this.store.tvShelfZone.slots);
+    }
 
     this.npcManager = new NPCManager(this.scene, this.store.colliders);
   }
@@ -375,7 +386,9 @@ class VideoVault {
       if (movie.Name.toLowerCase().includes(q)) {
         const genre    = (movie.Genres && movie.Genres[0]) || 'Other';
         const zoneIdx  = this._genreToZone.get(genre);
-        const location = zoneIdx !== undefined ? ZONE_LOCATIONS[zoneIdx] : 'STORE FLOOR';
+        const location = mesh.userData.isTVShow
+          ? TV_ZONE_LOCATION
+          : (zoneIdx !== undefined ? ZONE_LOCATIONS[zoneIdx] : 'STORE FLOOR');
         results.push({ movie, genre, location });
         if (results.length >= 8) break;
       }
@@ -527,7 +540,8 @@ class VideoVault {
         this.ui.showHover('Catalog Computer', '[E] Search');
       } else {
         this.movieManager?.setHovered(hit);
-        this.ui.showHover(hit.userData.movie?.Name || '', '[E] Pick up');
+        const hint = hit.userData.isTVShow ? '[E] Pick up show' : '[E] Pick up';
+        this.ui.showHover(hit.userData.movie?.Name || '', hint);
       }
     } else {
       // Nothing in crosshair — check for nearby NPC

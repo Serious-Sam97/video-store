@@ -59,12 +59,28 @@ export class UI {
   openMoviePanel(movie, jellyfinClient) {
     this._hideHUD();
 
-    document.getElementById('info-title').textContent    = movie.Name;
-    document.getElementById('info-year').textContent     = movie.ProductionYear || '';
-    document.getElementById('info-rating').textContent   = movie.CommunityRating
+    document.getElementById('info-title').textContent  = movie.Name;
+    document.getElementById('info-year').textContent   = movie.ProductionYear || '';
+    document.getElementById('info-rating').textContent = movie.CommunityRating
       ? `★ ${movie.CommunityRating.toFixed(1)}` : '';
-    document.getElementById('info-runtime').textContent  = movie.RunTimeTicks
-      ? `${Math.floor(movie.RunTimeTicks / 600000000)} min` : '';
+
+    const runtimeEl = document.getElementById('info-runtime');
+    const seasonsEl = document.getElementById('info-seasons');
+
+    if (movie.isTVShow) {
+      runtimeEl.textContent = '';
+      const s = movie.ChildCount || movie.NumberOfSeasons;
+      const e = movie.NumberOfEpisodes;
+      seasonsEl.textContent = [
+        s ? `${s} Season${s > 1 ? 's' : ''}` : '',
+        e ? `${e} Episodes` : '',
+      ].filter(Boolean).join(' · ');
+    } else {
+      seasonsEl.textContent = '';
+      runtimeEl.textContent = movie.RunTimeTicks
+        ? `${Math.floor(movie.RunTimeTicks / 600000000)} min` : '';
+    }
+
     document.getElementById('info-overview').textContent = movie.Overview || 'No description available.';
 
     const img = document.getElementById('poster-img');

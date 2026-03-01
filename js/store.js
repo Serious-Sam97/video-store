@@ -113,8 +113,15 @@ export class VideoStore {
       s.add(base);
     };
 
-    // Back wall (z=-22)
-    addWallPanel(32, 0, 0, -21.99, 0);
+    // Back wall (z=-22) — split into two panels; centre 6-unit gap is the TV-room doorway
+    addWallPanel(13, -9.5, 0, -21.99, 0);  // left of doorway  (x=-16 → x=-3)
+    addWallPanel(13,  9.5, 0, -21.99, 0);  // right of doorway (x=+3  → x=+16)
+    // Lintel above doorway opening (full wall height minus door height 2.8)
+    const DOOR_H_MAIN = 2.8;
+    const lintelH = WALL_H - DOOR_H_MAIN;
+    const lintelMesh = new THREE.Mesh(new THREE.PlaneGeometry(6, lintelH), wallMat);
+    lintelMesh.position.set(0, DOOR_H_MAIN + lintelH / 2, -21.99);
+    s.add(lintelMesh);
 
     // Front wall (z=+22) — windowed sections either side of door
     this._addWindowWall(s, wallMat, -11); // left section
@@ -277,8 +284,8 @@ export class VideoStore {
       { rotY: -Math.PI/2,  sign:[ 13.0, 2.55,  11,-Math.PI/2],  shelves:[[ 13.5,0,14],[ 13.5,0,8]]          },
       { rotY: -Math.PI/2,  sign:[ 13.0, 2.55,  -1,-Math.PI/2],  shelves:[[ 13.5,0,2], [ 13.5,0,-4]]         },
       { rotY: -Math.PI/2,  sign:[ 13.0, 2.55, -13,-Math.PI/2],  shelves:[[ 13.5,0,-10],[ 13.5,0,-16]]       },
-      // ── Back wall (1 zone) ──────────────────────────────────
-      { rotY: 0,           sign:[  0,   2.55, -20.5, Math.PI],   shelves:[[-10,0,-20.5],[-5,0,-20.5],[0,0,-20.5],[5,0,-20.5],[10,0,-20.5]] },
+      // ── Back wall (1 zone) — x=0 removed (doorway to TV room) ─
+      { rotY: 0,           sign:[-7.5, 2.55, -20.5, Math.PI],   shelves:[[-10,0,-20.5],[-5,0,-20.5],[5,0,-20.5],[10,0,-20.5]] },
       // ── Center-Left aisle: outer face (→ left wall aisle) ──
       { rotY: -Math.PI/2,  sign:[-5.2,  2.55,  -4, -Math.PI/2], shelves:[[-5.2,0,-16],[-5.2,0,-8],[-5.2,0,0],[-5.2,0,8]]  },
       // ── Center-Left aisle: inner face (→ center) ───────────
@@ -374,11 +381,11 @@ export class VideoStore {
       - local +Z maps to world direction based on rotY
       - local X (shelf run) rotates accordingly
   */
-  _addShelf(cx, cy, cz, rotY) {
+  _addShelf(cx, cy, cz, rotY, shelfColor = 0x3b2511, boardColor = 0x4e3218) {
     const s        = this.scene;
     const newSlots = [];
-    const shelfMat  = new THREE.MeshLambertMaterial({ color: 0x3b2511 });
-    const boardMat  = new THREE.MeshLambertMaterial({ color: 0x4e3218 });
+    const shelfMat  = new THREE.MeshLambertMaterial({ color: shelfColor });
+    const boardMat  = new THREE.MeshLambertMaterial({ color: boardColor });
 
     const group = new THREE.Group();
     group.position.set(cx, cy, cz);
@@ -551,18 +558,18 @@ export class VideoStore {
       new THREE.BoxGeometry(3.2, 2.2, 0.2),
       new THREE.MeshLambertMaterial({ color: 0x111111 })
     );
-    tvFrame.position.set(0, 2.5, -21.85);
+    tvFrame.position.set(13, 2.5, -21.85);
     s.add(tvFrame);
 
     const screen = new THREE.Mesh(
       new THREE.PlaneGeometry(2.9, 1.9),
       new THREE.MeshBasicMaterial({ color: 0x001aff })
     );
-    screen.position.set(0, 2.5, -21.73);
+    screen.position.set(13, 2.5, -21.73);
     s.add(screen);
 
     const tvLight = new THREE.PointLight(0x001aff, 1.5, 6);
-    tvLight.position.set(0, 2.5, -21.5);
+    tvLight.position.set(13, 2.5, -21.5);
     s.add(tvLight);
 
     // Static-ish pattern on TV screen using canvas texture
@@ -1000,7 +1007,199 @@ export class VideoStore {
     ctx.beginPath(); ctx.ellipse(cx + rw * 0.35, cy + rh * 0.1, rw * 0.6, rh * 0.5, 0, 0, Math.PI * 2); ctx.fill();
   }
 
-  // ─── MOVIE BANNERS ──────────────────────────────────────────
+  // ─── TV SHOWS BACK ROOM ──────────────────────────────────────
+  // A separate room behind the back wall (z=-22 to z=-38), accessed through
+  // the 6-unit-wide doorway centred at x=0 cut into the main back wall.
+  buildTVSection() {
+    const s      = this.scene;
+    const WALL_H = 3.8;
+    const RX1 = -10, RX2 = 10;      // room x bounds
+    const RZ1 = -22, RZ2 = -38;     // room z bounds  (z1 = doorway, z2 = back)
+    const RW  = RX2 - RX1;          // 20 units wide
+    const RD  = Math.abs(RZ2 - RZ1);// 16 units deep
+    const RCZ = (RZ1 + RZ2) / 2;    // -30 (room centre z)
+
+    // ── Floor (dark tile) ─────────────────────────────────────
+    const floorTex = this._makeCheckerTex(256, '#0e1620', '#121c2a', 8);
+    floorTex.repeat.set(5, 4);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(RW, RD),
+      new THREE.MeshLambertMaterial({ map: floorTex })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0.002, RCZ);
+    s.add(floor);
+
+    // ── Ceiling ───────────────────────────────────────────────
+    const ceil = new THREE.Mesh(
+      new THREE.PlaneGeometry(RW, RD),
+      new THREE.MeshLambertMaterial({ color: 0x0c1018 })
+    );
+    ceil.rotation.x = Math.PI / 2;
+    ceil.position.set(0, WALL_H, RCZ);
+    s.add(ceil);
+
+    // ── Walls ─────────────────────────────────────────────────
+    const wallMat  = new THREE.MeshLambertMaterial({ color: 0x1a2030 });
+    const wainsMat = new THREE.MeshLambertMaterial({ color: 0x0e1422 });
+    const baseMat  = new THREE.MeshLambertMaterial({
+      color: 0x080c12, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4,
+    });
+    const WAINS_H = 1.0, BASE_H = 0.12;
+    const UPPER_H = WALL_H - BASE_H - WAINS_H; // 2.68
+
+    const addPanel = (width, px, pz, rotY) => {
+      const upper = new THREE.Mesh(new THREE.PlaneGeometry(width, UPPER_H), wallMat);
+      upper.position.set(px, BASE_H + WAINS_H + UPPER_H / 2, pz);
+      upper.rotation.y = rotY;
+      s.add(upper);
+      const wains = new THREE.Mesh(new THREE.PlaneGeometry(width, WAINS_H), wainsMat);
+      wains.position.set(px, BASE_H + WAINS_H / 2, pz);
+      wains.rotation.y = rotY;
+      s.add(wains);
+      const base = new THREE.Mesh(new THREE.PlaneGeometry(width, BASE_H), baseMat);
+      base.position.set(px, BASE_H / 2, pz);
+      base.rotation.y = rotY;
+      s.add(base);
+    };
+
+    addPanel(RD, RX1, RCZ,  Math.PI / 2);  // left wall  (x=-10, faces +X)
+    addPanel(RD, RX2, RCZ, -Math.PI / 2);  // right wall (x=+10, faces -X)
+    addPanel(RW,   0, RZ2,  0);             // back wall  (z=-38, faces +Z)
+
+    // ── Doorway frame ─────────────────────────────────────────
+    const DOOR_W = 6, DOOR_H = 2.8;
+    const POST_W = 0.18;
+    const frameMat = new THREE.MeshLambertMaterial({ color: 0x1e2a38 });
+
+    const lpost = new THREE.Mesh(new THREE.BoxGeometry(POST_W, DOOR_H, POST_W * 2), frameMat);
+    lpost.position.set(-DOOR_W / 2, DOOR_H / 2, RZ1);
+    s.add(lpost);
+
+    const rpost = new THREE.Mesh(new THREE.BoxGeometry(POST_W, DOOR_H, POST_W * 2), frameMat);
+    rpost.position.set(DOOR_W / 2, DOOR_H / 2, RZ1);
+    s.add(rpost);
+
+    const lintelH = WALL_H - DOOR_H; // 1.0
+    const lintel  = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W + POST_W * 2, lintelH, POST_W * 2), frameMat);
+    lintel.position.set(0, DOOR_H + lintelH / 2, RZ1);
+    s.add(lintel);
+
+    // ── "TV SHOWS" sign — one face per side of the doorway ────
+    const SC_W = 512, SC_H = 96;
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = SC_W; signCanvas.height = SC_H;
+    const sc = signCanvas.getContext('2d');
+
+    const bg = sc.createLinearGradient(0, 0, SC_W, 0);
+    bg.addColorStop(0,   '#050d18');
+    bg.addColorStop(0.5, '#0a1826');
+    bg.addColorStop(1,   '#050d18');
+    sc.fillStyle = bg;
+    sc.fillRect(0, 0, SC_W, SC_H);
+    sc.strokeStyle = '#4488cc';
+    sc.lineWidth = 3;
+    sc.strokeRect(3, 3, SC_W - 6, SC_H - 6);
+    sc.fillStyle = '#88ccff';
+    sc.font = 'bold 52px sans-serif';
+    sc.textAlign = 'center';
+    sc.textBaseline = 'middle';
+    sc.fillText('TV  SHOWS', SC_W / 2, SC_H / 2);
+
+    const signY  = DOOR_H + lintelH / 2;
+    const signW  = 3.2, signHh = 0.5;
+
+    // Outside sign — faces +Z toward main store (player approaches from z=20)
+    const outerTex = new THREE.CanvasTexture(signCanvas);
+    const outerSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(signW, signHh),
+      new THREE.MeshBasicMaterial({
+        map: outerTex,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -8,
+      })
+    );
+    outerSign.position.set(0, signY, RZ1 + 0.25);
+    s.add(outerSign);
+
+    // Inside sign — faces -Z toward back room (player looks from z=-30 toward +Z)
+    const innerTex = new THREE.CanvasTexture(signCanvas);
+    // PlaneGeometry with rotY=Math.PI flips local-X so text appears mirrored;
+    // negate repeat.x + shift offset to compensate.
+    innerTex.repeat.set(-1, 1);
+    innerTex.offset.set(1, 0);
+    const innerSign = new THREE.Mesh(
+      new THREE.PlaneGeometry(signW, signHh),
+      new THREE.MeshBasicMaterial({
+        map: innerTex,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -8,
+      })
+    );
+    innerSign.position.set(0, signY, RZ1 - 0.25);
+    innerSign.rotation.y = Math.PI;
+    s.add(innerSign);
+
+    const signGlow = new THREE.PointLight(0x4488cc, 0.8, 6);
+    signGlow.position.set(0, DOOR_H + 0.5, RZ1);
+    s.add(signGlow);
+
+    // ── Inner face of main back wall (visible from inside back room) ──
+    // The _buildRoom() panels at z=-21.99 face +Z (main store side only).
+    // Add matching panels here facing -Z so the wall is visible from the back room.
+    addPanel(13, -9.5, -22.01, Math.PI);  // left of doorway
+    addPanel(13,  9.5, -22.01, Math.PI);  // right of doorway
+    // Lintel inner face
+    const lintelInner = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W, lintelH), wallMat);
+    lintelInner.position.set(0, DOOR_H + lintelH / 2, -22.01);
+    lintelInner.rotation.y = Math.PI;
+    s.add(lintelInner);
+
+    // ── Neon strips ───────────────────────────────────────────
+    this._neonStrip(new THREE.Vector3(RX1, WALL_H - 0.07, RCZ), RD, Math.PI / 2, 0x0055ff);
+    this._neonStrip(new THREE.Vector3(RX2, WALL_H - 0.07, RCZ), RD, Math.PI / 2, 0x0055ff);
+    this._neonStrip(new THREE.Vector3(0, WALL_H - 0.07, RZ2),   RW, 0,           0x0077ff);
+
+    // ── Ceiling lights ────────────────────────────────────────
+    for (const [lx, lz] of [[-4, -27], [4, -27], [-4, -33], [4, -33]]) {
+      const tube = new THREE.Mesh(
+        new THREE.BoxGeometry(2.5, 0.04, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0xdde8ff })
+      );
+      tube.position.set(lx, WALL_H - 0.02, lz);
+      s.add(tube);
+      const l = new THREE.PointLight(0xaabbee, 1.8, 16);
+      l.position.set(lx, WALL_H - 0.3, lz);
+      s.add(l);
+    }
+
+    // ── TV Shelves ────────────────────────────────────────────
+    const SHELF_C = 0x1e2a38, BOARD_C = 0x283848;
+    const slots = [];
+
+    // Left wall (x=-9.5, facing +X into room)
+    slots.push(...this._addShelf(-9.5, 0, -27, Math.PI / 2, SHELF_C, BOARD_C));
+    slots.push(...this._addShelf(-9.5, 0, -33, Math.PI / 2, SHELF_C, BOARD_C));
+
+    // Right wall (x=+9.5, facing -X into room)
+    slots.push(...this._addShelf(9.5, 0, -27, -Math.PI / 2, SHELF_C, BOARD_C));
+    slots.push(...this._addShelf(9.5, 0, -33, -Math.PI / 2, SHELF_C, BOARD_C));
+
+    // Back wall (z=-37.2, books face +Z toward entering player)
+    slots.push(...this._addShelf(-5, 0, -37.2, 0, SHELF_C, BOARD_C));
+    slots.push(...this._addShelf( 0, 0, -37.2, 0, SHELF_C, BOARD_C));
+    slots.push(...this._addShelf( 5, 0, -37.2, 0, SHELF_C, BOARD_C));
+
+    // ── Back room wall colliders ───────────────────────────────
+    this.colliders.push({ min: new THREE.Vector3(RX1 - 0.3, 0, RZ2), max: new THREE.Vector3(RX1 + 0.3, WALL_H, RZ1) });
+    this.colliders.push({ min: new THREE.Vector3(RX2 - 0.3, 0, RZ2), max: new THREE.Vector3(RX2 + 0.3, WALL_H, RZ1) });
+    this.colliders.push({ min: new THREE.Vector3(RX1, 0, RZ2 - 0.3), max: new THREE.Vector3(RX2, WALL_H, RZ2 + 0.3) });
+
+    this.tvShelfZone = { slots };
+  }
+
   // ─── ENTRANCE COMPUTER ──────────────────────────────────────
   _buildEntranceComputer() {
     const s   = this.scene;

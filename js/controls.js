@@ -120,7 +120,7 @@ export class FirstPersonControls {
 
     // Room bounds
     this.camera.position.x = Math.max(-15.3, Math.min(15.3, this.camera.position.x));
-    this.camera.position.z = Math.max(-21.3, Math.min(21.3, this.camera.position.z));
+    this.camera.position.z = Math.max(-37.3, Math.min(21.3, this.camera.position.z));
 
     // Shelf collisions — push out separately on X and Z
     if (colliders) {
